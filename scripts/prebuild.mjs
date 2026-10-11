@@ -234,35 +234,12 @@ async function getLatestAlphaVersion() {
 }
 
 async function getLatestReleaseVersion() {
-  if (!FORCE) {
-    const cached = await getCachedVersion('META_VERSION')
-    if (cached) {
-      META_VERSION = cached
-      return
-    }
+  META_VERSION = process.env.CVR_MIHOMO_VERSION || 'v1.19.32'
+  if (!/^v\d+\.\d+\.\d+$/.test(META_VERSION)) {
+    throw new Error('CVR_MIHOMO_VERSION must be a stable vX.Y.Z release')
   }
-  const options = {}
-  const httpProxy =
-    process.env.HTTP_PROXY ||
-    process.env.http_proxy ||
-    process.env.HTTPS_PROXY ||
-    process.env.https_proxy
-  if (httpProxy) options.agent = new HttpsProxyAgent(httpProxy)
+  log_info(`Pinned release version: ${META_VERSION}`)
 
-  try {
-    const response = await fetch(META_VERSION_URL, {
-      ...options,
-      method: 'GET',
-    })
-    if (!response.ok)
-      throw new Error(`Failed to fetch ${META_VERSION_URL}: ${response.status}`)
-    META_VERSION = (await response.text()).trim()
-    log_info(`Latest release version: ${META_VERSION}`)
-    await setCachedVersion('META_VERSION', META_VERSION)
-  } catch (err) {
-    log_error('Error fetching latest release version:', err.message)
-    process.exit(1)
-  }
 }
 
 if (!META_MAP[`${platform}-${arch}`]) {
@@ -511,9 +488,9 @@ const resolvePlugin = async () => {
 // Service executable permissions
 const resolveServicePermission = async () => {
   const serviceExecutables = [
-    'clash-verge-service*',
-    'clash-verge-service-install*',
-    'clash-verge-service-uninstall*',
+    'flowclash-service*',
+    'flowclash-service-install*',
+    'flowclash-service-uninstall*',
   ]
   const hashCache = await loadHashCache()
   let hasChanges = false
@@ -546,9 +523,9 @@ const resolveServicePermission = async () => {
 
 // Other resources
 const SERVICE_BINARIES = [
-  'clash-verge-service',
-  'clash-verge-service-install',
-  'clash-verge-service-uninstall',
+  'flowclash-service',
+  'flowclash-service-install',
+  'flowclash-service-uninstall',
 ]
 
 function serviceFileInfo(name) {

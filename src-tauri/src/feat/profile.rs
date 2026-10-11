@@ -210,13 +210,23 @@ pub async fn update_profile(uid: &String, option: Option<&PrfOption>, is_mannual
         }
         None => false,
     };
+    let routing_enabled = crate::config::routing::routing_config().await?.enabled;
+    let _routing_write = if routing_enabled {
+        Some(Config::lock_config_write().await)
+    } else {
+        None
+    };
     let profiles = Config::profiles().await;
     let is_current = profiles.latest_arc().current.as_ref() == Some(uid);
-    let should_refresh = is_current || (!profile_persisted && is_mannual_trigger);
+    let should_refresh =
+        is_current || (profile_persisted && routing_enabled) || (!profile_persisted && is_mannual_trigger);
 
     if should_refresh {
         logging!(debug, Type::Config, "[订阅更新] 更新内核配置");
-        match CoreManager::global().update_config_with_force(is_mannual_trigger).await {
+        match CoreManager::global()
+            .update_config_with_force(is_mannual_trigger || routing_enabled)
+            .await
+        {
             Ok(outcome) if outcome.is_valid() => {
                 logging_error!(Type::Config, Config::sync_dns_override().await);
                 announce(Refresh::Clash);

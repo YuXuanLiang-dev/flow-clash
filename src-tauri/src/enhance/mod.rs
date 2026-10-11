@@ -962,6 +962,7 @@ pub async fn enhance(
     let config = ensure_lan_bind_address(config);
 
     let config = cleanup_proxy_groups(config);
+    let config = crate::core::routing::catalog::overlay(config, profiles).await?;
     let config = use_sort(config);
 
     let mut exists_keys_set = HashSet::new();

@@ -41,9 +41,12 @@ pub async fn patch_clash_mode(payload: String) -> CmdResult {
         .with_error_code("CLASH_MODE_UPDATE_FAILED")
 }
 
-/// Reads the saved mode without depending on strict mihomo `/configs` deserialization.
+/// Reads the effective mode without depending on strict mihomo `/configs` deserialization.
 #[tauri::command]
 pub async fn get_clash_mode() -> CmdResult<Option<String>> {
+    if crate::config::routing::routing_config().await.stringify_err()?.enabled {
+        return Ok(Some("rule".into()));
+    }
     Ok(Config::clash().await.data_arc().get_mode().map(Into::into))
 }
 

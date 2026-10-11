@@ -248,10 +248,6 @@ fn macos_service_install_markers() -> Vec<String> {
             "/Library/PrivilegedHelperTools/{}.bundle",
             clash_verge_service_ipc::MACOS_SERVICE_ID
         ),
-        #[cfg(not(feature = "verge-dev"))]
-        "/Library/LaunchDaemons/io.github.clashverge.helper.plist".to_owned(),
-        #[cfg(not(feature = "verge-dev"))]
-        "/Library/PrivilegedHelperTools/io.github.clashverge.helper".to_owned(),
     ]
 }
 
@@ -461,7 +457,7 @@ where
         .with_context(|| format!("failed to open development Service core source {}", source.display()))?;
 
     let staging_directory = home
-        .join("Applications/.clash-verge-rev-dev")
+        .join("Applications/.flowclash-rev-dev")
         .join(staging_directory_name);
     std::fs::create_dir_all(&staging_directory).with_context(|| {
         format!(
@@ -600,8 +596,8 @@ fn uninstall_service() -> Result<()> {
     use runas::Command as RunasCommand;
     use std::os::windows::process::CommandExt as _;
 
-    let uninstall_path = packaged_service_tool_path("clash-verge-service-uninstall.exe", || {
-        Ok(dirs::service_path()?.with_file_name("clash-verge-service-uninstall.exe"))
+    let uninstall_path = packaged_service_tool_path("flowclash-service-uninstall.exe", || {
+        Ok(dirs::service_path()?.with_file_name("flowclash-service-uninstall.exe"))
     })?;
 
     if !uninstall_path.exists() {
@@ -629,8 +625,8 @@ fn uninstall_service() -> Result<()> {
 fn uninstall_service() -> Result<()> {
     logging!(info, Type::Service, "uninstall service");
 
-    let uninstall_path = packaged_service_tool_path("clash-verge-service-uninstall", || {
-        Ok(tauri::utils::platform::current_exe()?.with_file_name("clash-verge-service-uninstall"))
+    let uninstall_path = packaged_service_tool_path("flowclash-service-uninstall", || {
+        Ok(tauri::utils::platform::current_exe()?.with_file_name("flowclash-service-uninstall"))
     })?;
 
     if !uninstall_path.exists() {
@@ -688,8 +684,8 @@ fn linux_running_as_root() -> bool {
 fn uninstall_service() -> Result<()> {
     logging!(info, Type::Service, "uninstall service");
 
-    let uninstall_path = packaged_service_tool_path("clash-verge-service-uninstall", || {
-        Ok(dirs::service_path()?.with_file_name("clash-verge-service-uninstall"))
+    let uninstall_path = packaged_service_tool_path("flowclash-service-uninstall", || {
+        Ok(dirs::service_path()?.with_file_name("flowclash-service-uninstall"))
     })?;
 
     if !uninstall_path.exists() {
@@ -737,7 +733,7 @@ fn install_service() -> Result<()> {
 }
 
 fn invoke_service_install(cores: &[clash_verge_service_ipc::management::CoreSource], core_only: bool) -> Result<()> {
-    let name = format!("clash-verge-service-install{}", std::env::consts::EXE_SUFFIX);
+    let name = format!("flowclash-service-install{}", std::env::consts::EXE_SUFFIX);
     let installer = packaged_service_tool_path(&name, || {
         #[cfg(target_os = "linux")]
         let executable = tauri::utils::platform::current_exe()?;
@@ -2112,12 +2108,12 @@ mod tests {
     }
 
     fn staging_directory(home: &Path) -> PathBuf {
-        home.join("Applications/.clash-verge-rev-dev/service-core")
+        home.join("Applications/.flowclash-rev-dev/service-core")
     }
 
     #[cfg(unix)]
     fn service_tools_staging_directory(home: &Path) -> PathBuf {
-        home.join("Applications/.clash-verge-rev-dev/service-tools")
+        home.join("Applications/.flowclash-rev-dev/service-tools")
     }
 
     #[cfg(unix)]
@@ -2164,7 +2160,7 @@ mod tests {
 
         assert_eq!(
             selected,
-            home.join("Applications/.clash-verge-rev-dev/service-core/verge-mihomo")
+            home.join("Applications/.flowclash-rev-dev/service-core/verge-mihomo")
         );
         assert_eq!(std::fs::read(&selected)?, b"development core");
         let metadata = std::fs::symlink_metadata(&selected)?;
@@ -2180,14 +2176,14 @@ mod tests {
 
         let root = TestDirectory::new("development-service-tool")?;
         let home = root.path().join("home");
-        let source = root.path().join("clash-verge-service-install");
+        let source = root.path().join("flowclash-service-install");
         std::fs::write(&source, b"development installer")?;
 
         let selected = service_tool_path_for(&source, Some(&home), true)?;
 
         assert_eq!(
             selected,
-            service_tools_staging_directory(&home).join("clash-verge-service-install")
+            service_tools_staging_directory(&home).join("flowclash-service-install")
         );
         assert_eq!(std::fs::read(&selected)?, b"development installer");
         assert_ne!(std::fs::metadata(&selected)?.permissions().mode() & 0o111, 0);
@@ -2204,7 +2200,7 @@ mod tests {
         let selected = service_core_path_for(&source, Some(&home), true)?;
         assert_eq!(
             selected,
-            home.join("Applications/.clash-verge-rev-dev/service-core/verge-mihomo")
+            home.join("Applications/.flowclash-rev-dev/service-core/verge-mihomo")
         );
 
         std::fs::write(&source, b"second core")?;
@@ -2261,7 +2257,7 @@ mod tests {
         let home = root.path().join("home");
         let source = root.path().join("verge-mihomo");
         std::fs::write(&source, b"selected core")?;
-        let final_path = home.join("Applications/.clash-verge-rev-dev/service-core/verge-mihomo");
+        let final_path = home.join("Applications/.flowclash-rev-dev/service-core/verge-mihomo");
         std::fs::create_dir_all(final_path.parent().unwrap_or_else(|| Path::new(".")))?;
         let symlink_target = root.path().join("must-not-change");
         std::fs::write(&symlink_target, b"target bytes")?;
@@ -2478,12 +2474,11 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     #[test]
-    fn legacy_socket_alone_is_not_install_evidence() {
-        assert!(
-            !super::macos_service_install_markers()
-                .iter()
-                .any(|marker| marker == "/tmp/verge/clash-verge-service.sock")
-        );
+    fn flowclash_install_markers_ignore_clash_verge() {
+        let markers = super::macos_service_install_markers();
+        assert_eq!(markers.len(), 2);
+        assert!(markers.iter().all(|marker| marker.contains(clash_verge_service_ipc::MACOS_SERVICE_ID)));
+        assert!(markers.iter().all(|marker| !marker.contains("clashverge") && !marker.contains("clash-verge")));
     }
 
     #[test]

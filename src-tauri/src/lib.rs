@@ -194,6 +194,13 @@ mod app_init {
             cmd::exit_app,
             cmd::get_network_interfaces_info,
             cmd::get_profiles,
+            cmd::get_routing_config,
+            cmd::get_routing_defaults,
+            cmd::save_routing_settings,
+            cmd::set_routing_subscription_role,
+            cmd::get_routing_status,
+            cmd::list_routing_nodes,
+            cmd::reevaluate_routing,
             cmd::enhance_profiles,
             cmd::patch_profiles_config,
             cmd::view_profile,
@@ -521,6 +528,10 @@ pub fn run() -> std::process::ExitCode {
             #[cfg(target_os = "macos")]
             tauri::WindowEvent::Destroyed => {
                 event_handlers::handle_window_destroyed();
+            }
+            #[cfg(target_os = "macos")]
+            tauri::WindowEvent::ThemeChanged(theme) => {
+                crate::utils::macos_icon::apply_for_theme(app_handle, matches!(theme, tauri::Theme::Dark));
             }
             _ => {}
         },

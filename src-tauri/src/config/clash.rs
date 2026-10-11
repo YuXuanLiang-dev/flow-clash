@@ -242,9 +242,9 @@ impl IClashTemp {
                 Value::Number(val_num) => val_num.as_u64().map(|u| u as u16),
                 _ => None,
             })
-            .unwrap_or(7898);
+            .unwrap_or(network::ports::DEFAULT_SOCKS);
         if port == 0 {
-            port = 7898;
+            port = network::ports::DEFAULT_SOCKS;
         }
         port
     }
@@ -257,9 +257,9 @@ impl IClashTemp {
                 Value::Number(val_num) => val_num.as_u64().map(|u| u as u16),
                 _ => None,
             })
-            .unwrap_or(7899);
+            .unwrap_or(network::ports::DEFAULT_HTTP);
         if port == 0 {
-            port = 7899;
+            port = network::ports::DEFAULT_HTTP;
         }
         port
     }
@@ -280,7 +280,7 @@ impl IClashTemp {
                 }
                 None => None,
             })
-            .unwrap_or_else(|| "127.0.0.1:9097".into())
+            .unwrap_or_else(|| network::DEFAULT_EXTERNAL_CONTROLLER.into())
     }
 
     fn guard_client_ctrl(config: &Mapping) -> String {
@@ -292,7 +292,7 @@ impl IClashTemp {
                 }
                 socket.to_string()
             }
-            Err(_) => "127.0.0.1:9097".into(),
+            Err(_) => network::DEFAULT_EXTERNAL_CONTROLLER.into(),
         }
     }
 
@@ -333,8 +333,8 @@ fn test_clash_info() {
     fn get_result<S: Into<String>>(port: u16, server: S) -> ClashInfo {
         ClashInfo {
             mixed_port: port,
-            socks_port: 7898,
-            port: 7899,
+            socks_port: network::ports::DEFAULT_SOCKS,
+            port: network::ports::DEFAULT_HTTP,
             server: server.into(),
             secret: None,
         }
@@ -342,16 +342,22 @@ fn test_clash_info() {
 
     assert_eq!(
         IClashTemp(IClashTemp::guard(Mapping::new())).get_client_info(),
-        get_result(7897, "127.0.0.1:9097")
+        get_result(network::ports::DEFAULT_MIXED, network::DEFAULT_EXTERNAL_CONTROLLER)
     );
 
-    assert_eq!(get_case("", ""), get_result(7897, "127.0.0.1:9097"));
+    assert_eq!(
+        get_case("", ""),
+        get_result(network::ports::DEFAULT_MIXED, network::DEFAULT_EXTERNAL_CONTROLLER)
+    );
 
-    assert_eq!(get_case(65537, ""), get_result(1, "127.0.0.1:9097"));
+    assert_eq!(get_case(65537, ""), get_result(1, network::DEFAULT_EXTERNAL_CONTROLLER));
 
     assert_eq!(get_case(8888, "127.0.0.1:8888"), get_result(8888, "127.0.0.1:8888"));
 
-    assert_eq!(get_case(8888, "   :98888 "), get_result(8888, "127.0.0.1:9097"));
+    assert_eq!(
+        get_case(8888, "   :98888 "),
+        get_result(8888, network::DEFAULT_EXTERNAL_CONTROLLER)
+    );
 
     assert_eq!(get_case(8888, "0.0.0.0:8080  "), get_result(8888, "127.0.0.1:8080"));
 
@@ -361,7 +367,10 @@ fn test_clash_info() {
 
     assert_eq!(get_case(8888, "192.168.1.1:8080"), get_result(8888, "192.168.1.1:8080"));
 
-    assert_eq!(get_case(8888, "192.168.1.1:80800"), get_result(8888, "127.0.0.1:9097"));
+    assert_eq!(
+        get_case(8888, "192.168.1.1:80800"),
+        get_result(8888, network::DEFAULT_EXTERNAL_CONTROLLER)
+    );
 }
 
 #[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]

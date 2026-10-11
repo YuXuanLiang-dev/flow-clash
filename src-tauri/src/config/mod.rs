@@ -8,6 +8,7 @@ mod port;
 mod prfitem;
 pub mod profiles;
 pub mod runtime;
+pub mod routing;
 pub(crate) mod snapshot;
 mod verge;
 

@@ -622,6 +622,9 @@ async fn fetch_proxies_with_timeout() -> Result<Proxies> {
 }
 
 async fn select_node_with_timeout(group_name: &String, node: &String) -> Result<()> {
+    if group_name.starts_with("CVR-") && crate::config::routing::routing_config().await?.enabled {
+        return Ok(());
+    }
     tokio::time::timeout(MIHOMO_OPERATION_TIMEOUT, async {
         handle::Handle::mihomo().select_node_for_group(group_name, node).await
     })

@@ -23,6 +23,7 @@ import { DnsViewer } from './mods/dns-viewer'
 import { HeaderConfiguration } from './mods/external-controller-cors'
 import { GuardState } from './mods/guard-state'
 import { NetworkInterfaceViewer } from './mods/network-interface-viewer'
+import { RoutingViewer } from './mods/routing-viewer'
 import { SettingItem, SettingList } from './mods/setting-comp'
 import { TunnelsViewer } from './mods/tunnels-viewer'
 import { WebUIViewer } from './mods/web-ui-viewer'
@@ -59,6 +60,7 @@ const SettingClash = ({ onError }: Props) => {
     source: string
   } | null>(null)
   const [dnsUpdating, setDnsUpdating] = useState(false)
+  const [routingOpen, setRoutingOpen] = useState(false)
 
   const webRef = useRef<DialogRef>(null)
   const portRef = useRef<DialogRef>(null)
@@ -124,6 +126,8 @@ const SettingClash = ({ onError }: Props) => {
 
   return (
     <SettingList title={t('settings.sections.clash.title')}>
+      {routingOpen && <RoutingViewer open onClose={() => setRoutingOpen(false)} />}
+      <SettingItem label={t('routing.title')} onClick={() => setRoutingOpen(true)} />
       <WebUIViewer ref={webRef} />
       <ClashPortViewer ref={portRef} />
       <ControllerViewer ref={ctrlRef} />

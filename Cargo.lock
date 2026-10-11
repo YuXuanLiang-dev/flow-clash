@@ -1083,7 +1083,7 @@ checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
 name = "clash-verge"
-version = "2.5.8"
+version = "1.0.0"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -1228,7 +1228,6 @@ dependencies = [
 [[package]]
 name = "clash_verge_service_ipc"
 version = "2.7.6"
-source = "git+https://github.com/clash-verge-rev/clash-verge-service-ipc.git?tag=v2.7.6#b2a7427d6681c8d3780ab83a73f4dc21da2f22d6"
 dependencies = [
  "anyhow",
  "kode-bridge",

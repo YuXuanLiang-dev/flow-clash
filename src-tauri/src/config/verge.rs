@@ -355,24 +355,24 @@ impl IVerge {
             pac_file_content: Some(DEFAULT_PAC.into()),
             proxy_host: Some("127.0.0.1".into()),
             #[cfg(not(target_os = "windows"))]
-            verge_redir_port: Some(7895),
+            verge_redir_port: Some(network::ports::DEFAULT_REDIR),
             #[cfg(not(target_os = "windows"))]
             verge_redir_enabled: Some(false),
             #[cfg(target_os = "linux")]
-            verge_tproxy_port: Some(7896),
+            verge_tproxy_port: Some(network::ports::DEFAULT_TPROXY),
             #[cfg(target_os = "linux")]
             verge_tproxy_enabled: Some(false),
             verge_mixed_port: Some(network::ports::DEFAULT_MIXED),
-            verge_socks_port: Some(7898),
+            verge_socks_port: Some(network::ports::DEFAULT_SOCKS),
             verge_socks_enabled: Some(false),
-            verge_port: Some(7899),
+            verge_port: Some(network::ports::DEFAULT_HTTP),
             verge_http_enabled: Some(false),
             enable_proxy_guard: Some(false),
             enable_bypass_check: Some(true),
             use_default_bypass: Some(true),
             proxy_guard_duration: Some(30),
             auto_close_connection: Some(true),
-            auto_check_update: Some(true),
+            auto_check_update: Some(false),
             enable_builtin_enhanced: Some(true),
             auto_log_clean: Some(2), // 1: 1天, 2: 7天, 3: 30天, 4: 90天
             enable_auto_backup_schedule: Some(false),

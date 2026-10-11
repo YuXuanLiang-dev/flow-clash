@@ -6,6 +6,14 @@ use tokio::sync::MutexGuard;
 
 pub async fn patch_clash(patch: &Mapping) -> Result<()> {
     let config_write = Config::try_lock_config_write()?;
+    if patch
+        .get("mode")
+        .and_then(serde_yaml_ng::Value::as_str)
+        .is_some_and(|mode| mode != "rule")
+        && crate::config::routing::routing_config().await?.enabled
+    {
+        anyhow::bail!("Disable adaptive routing before changing the proxy mode");
+    }
     super::executor::apply(
         &config_write,
         super::executor::Patch::Clash(patch),

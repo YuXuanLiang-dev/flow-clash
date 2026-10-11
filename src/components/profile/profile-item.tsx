@@ -8,6 +8,8 @@ import {
 import {
   Box,
   CircularProgress,
+  Chip,
+  Divider,
   IconButton,
   keyframes,
   LinearProgress,
@@ -46,6 +48,7 @@ import {
   useSetProfileLoading,
 } from '@/store/app-store-context'
 import type { TranslationKey } from '@/types/generated/i18n-keys'
+import type { RoutingRole } from '@/types/routing'
 import { debugLog } from '@/utils/debug'
 import { isValidUrl } from '@/utils/network'
 import { openExternalUrl } from '@/utils/open-external-url'
@@ -76,6 +79,9 @@ export interface ProfileItemProps {
   onSelectionChange?: () => void
   timerUpdateRevision: number
   completedUpdateRevision: number
+  routingRole?: RoutingRole
+  routingBusy?: boolean
+  onRoutingRole?: (role: RoutingRole) => void
 }
 
 const ProfileItemBase = (props: ProfileItemProps) => {
@@ -95,6 +101,9 @@ const ProfileItemBase = (props: ProfileItemProps) => {
     onSelectionChange,
     timerUpdateRevision,
     completedUpdateRevision,
+    routingRole = 'normal',
+    routingBusy = false,
+    onRoutingRole,
   } = props
 
   const [element, setElement] = useState<Element | null>(null)
@@ -759,6 +768,16 @@ const ProfileItemBase = (props: ProfileItemProps) => {
             </IconButton>
           )}
         </Box>
+        {routingRole !== 'normal' && (
+          <Chip
+            size="small"
+            color={routingRole === 'ingress' ? 'primary' : 'secondary'}
+            label={t(
+              routingRole === 'ingress' ? 'routing.ingress' : 'routing.egress',
+            )}
+            sx={{ mt: 0.5 }}
+          />
+        )}
         <Box sx={boxStyle}>
           {
             <>
@@ -855,6 +874,28 @@ const ProfileItemBase = (props: ProfileItemProps) => {
           e.preventDefault()
         }}
       >
+        {onRoutingRole &&
+          (['ingress', 'egress', 'normal'] as const).map((role) => (
+            <MenuItem
+              key={role}
+              selected={routingRole === role && role !== 'normal'}
+              disabled={routingBusy || routingRole === role}
+              dense
+              onClick={() => {
+                setAnchorEl(null)
+                onRoutingRole(role)
+              }}
+            >
+              {t(
+                role === 'ingress'
+                  ? 'routing.setIngress'
+                  : role === 'egress'
+                    ? 'routing.setEgress'
+                    : 'routing.clearRole',
+              )}
+            </MenuItem>
+          ))}
+        {onRoutingRole && <Divider />}
         {(hasUrl ? urlModeMenu : fileModeMenu).map((item) => (
           <MenuItem
             key={item.label}

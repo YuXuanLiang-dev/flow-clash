@@ -87,6 +87,7 @@ const STARTUP_LANGUAGE_SECTIONS = [
   'home',
   'shared',
   'settings',
+  'routing',
   'profiles',
   'proxies',
   'tests',

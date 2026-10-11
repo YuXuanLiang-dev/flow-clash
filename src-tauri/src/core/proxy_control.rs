@@ -472,6 +472,13 @@ fn table_effect(result: &Result<()>) -> TableEffect<'_> {
 
 #[tracing::instrument(skip_all, level = "info", fields(route = tracing::field::Empty))]
 pub async fn apply() -> Result<()> {
+    if Config::verge().await.latest_arc().enable_system_proxy.unwrap_or_default()
+        && crate::config::routing::routing_config().await?.enabled
+        && !crate::core::routing::verified()
+    {
+        crate::core::routing::start();
+        return Ok(());
+    }
     let running_mode = CoreManager::global().get_running_mode();
     let verge = Config::verge().await.latest_arc();
     let route = proxy_backend_route(cfg!(target_os = "macos"), &running_mode);
@@ -573,6 +580,10 @@ async fn clear_inner() -> Result<()> {
 }
 
 pub async fn refresh_guard() -> Result<()> {
+    if crate::config::routing::routing_config().await?.enabled && !crate::core::routing::verified() {
+        stop_guard().await;
+        return Ok(());
+    }
     let (generation, _drained) = SERVICE_PROXY_OPERATIONS
         .cancel_and_drain(|| Sysopt::global().stop_proxy_guard())
         .await;

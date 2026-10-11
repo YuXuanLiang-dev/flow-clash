@@ -1,4 +1,5 @@
 [workspace]
+exclude = ["vendor/clash-verge-service-ipc"]
 members = [
   "src-tauri",
   "crates/clash-verge-draft",

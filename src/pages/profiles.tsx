@@ -38,7 +38,9 @@ import {
   ProfileViewer,
   type ProfileViewerRef,
 } from '@/components/profile/profile-viewer'
+import { RoutingSummary } from '@/components/profile/routing-summary'
 import { ConfigViewer } from '@/components/setting/mods/config-viewer'
+import { RoutingViewer } from '@/components/setting/mods/routing-viewer'
 import { fetchProfilesIntoCache, useProfiles } from '@/hooks/use-profiles'
 import {
   createProfile,
@@ -46,18 +48,25 @@ import {
   enhanceProfiles,
   getRuntimeLogs,
   importProfile,
+  getRoutingConfig,
+  setRoutingSubscriptionRole,
   reorderProfile,
   updateProfile,
 } from '@/services/cmds'
 import { mutate } from '@/services/mutate'
 import { errorDetail, showNotice } from '@/services/notice-service'
-import { revalidateQuery, useQuery } from '@/services/query-client'
+import {
+  revalidateQuery,
+  setCacheData,
+  useQuery,
+} from '@/services/query-client'
 import { useThemeMode } from '@/services/states'
 import {
   useProfileLoadingCache,
   useProfileUpdates,
   useSetProfileLoading,
 } from '@/store/app-store-context'
+import type { RoutingRole } from '@/types/routing'
 import { debugLog } from '@/utils/debug'
 import { isValidUrl } from '@/utils/network'
 
@@ -91,6 +100,29 @@ const ProfilePage = () => {
     string | null
   >(null)
   const [loading, setLoading] = useState(false)
+  const [routingTab, setRoutingTab] = useState<number | null>(null)
+  const [routingBusy, setRoutingBusy] = useState(false)
+  const { data: routingConfig } = useQuery({
+    queryKey: ['routingConfig'],
+    queryFn: getRoutingConfig,
+  })
+
+  const onRoutingRole = async (uid: string, role: RoutingRole) => {
+    setRoutingBusy(true)
+    try {
+      await mutate(() => setRoutingSubscriptionRole(uid, role), {
+        id: 'routing-settings',
+        onFulfilled: (value) => {
+          void setCacheData(['routingConfig'], value)
+        },
+        revalidate: [['routingStatus']],
+      })
+    } catch {
+      /* The shared mutation reports the backend error. */
+    } finally {
+      setRoutingBusy(false)
+    }
+  }
 
   const [batchMode, setBatchMode] = useState(false)
   const [selectedProfiles, setSelectedProfiles] = useState<Set<string>>(
@@ -692,6 +724,9 @@ const ProfilePage = () => {
       contentStyle={{ height: '100%' }}
       header={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Button size="small" onClick={() => setRoutingTab(1)}>
+            {t('routing.foldersTitle')}
+          </Button>
           {!batchMode ? (
             <>
               {/* Batch mode toggle button */}
@@ -798,6 +833,13 @@ const ProfilePage = () => {
         </Box>
       }
     >
+      {routingTab !== null && (
+        <RoutingViewer
+          open
+          initialTab={routingTab}
+          onClose={() => setRoutingTab(null)}
+        />
+      )}
       <Stack
         direction="row"
         spacing={1}
@@ -878,6 +920,11 @@ const ProfilePage = () => {
           overflowY: 'auto',
         }}
       >
+        <RoutingSummary
+          config={routingConfig}
+          profiles={profileItems}
+          onSettings={() => setRoutingTab(0)}
+        />
         <DragDropProvider
           key={profileDndRevision}
           sensors={[profilePointerSensor, KeyboardSensor]}
@@ -906,6 +953,11 @@ const ProfilePage = () => {
                   visibleSwitchingProfile === item.uid
                 }
                 itemData={item}
+                routingRole={routingConfig?.profile_roles[item.uid] ?? 'normal'}
+                routingBusy={routingBusy || !routingConfig}
+                onRoutingRole={(role) => {
+                  void onRoutingRole(item.uid, role)
+                }}
                 timerUpdateRevision={timerRevisions.get(item.uid) ?? 0}
                 completedUpdateRevision={
                   completedUpdateRevisions.get(item.uid) ?? 0

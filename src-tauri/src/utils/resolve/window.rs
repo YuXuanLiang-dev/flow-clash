@@ -81,7 +81,7 @@ pub async fn build_new_window() -> Result<WebviewWindow, String> {
         "main", /* the unique window label */
         tauri::WebviewUrl::App(start_page.into()),
     )
-    .title("Clash Verge")
+    .title("Flow Clash")
     .center()
     .decorations(DEFAULT_DECORATIONS)
     .fullscreen(false)
@@ -109,6 +109,14 @@ pub async fn build_new_window() -> Result<WebviewWindow, String> {
         Ok(window) => {
             logging_error!(Type::Window, window.set_background_color(Some(background_color)));
             restore_default_size_if_needed(&window);
+            // Apply the appearance-matched Dock icon right away; later system
+            // appearance switches arrive as WindowEvent::ThemeChanged.
+            #[cfg(target_os = "macos")]
+            {
+                let app = tauri::Manager::app_handle(&window).clone();
+                let dark = window.theme().is_ok_and(|theme| theme == tauri::Theme::Dark);
+                crate::utils::macos_icon::apply_for_theme(&app, dark);
+            }
             // A new page supersedes any reload marker left by the old window.
             #[cfg(target_os = "macos")]
             take_webview_needs_reload();

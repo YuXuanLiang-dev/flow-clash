@@ -12,6 +12,7 @@ pub mod notify;
 pub(crate) mod owner_identity;
 pub mod proxy_control;
 pub mod proxy_view;
+pub mod routing;
 pub mod runstate;
 pub(crate) mod runtime_bundle;
 pub mod service;

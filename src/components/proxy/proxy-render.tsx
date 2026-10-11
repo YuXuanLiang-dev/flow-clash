@@ -18,8 +18,12 @@ import { useTranslation } from 'react-i18next'
 
 import { useIconCache } from '@/hooks/use-icon-cache'
 import { useVerge } from '@/hooks/use-verge'
+import { getRoutingStatus } from '@/services/cmds'
+import { useQuery } from '@/services/query-client'
 import { useThemeMode } from '@/services/states'
+import type { TranslationKey } from '@/types/generated/i18n-keys'
 import type { ResolvedProxyMember } from '@/types/proxy-view'
+import { ROUTING_GROUPS } from '@/types/routing'
 
 import { ProxyGroupHeaderBlock } from './proxy-group-header-block'
 import { ProxyGroupTools } from './proxy-group-tools'
@@ -43,6 +47,34 @@ interface RenderProps {
   onGroupToggle?: (group: IRenderItem['group']) => void
 }
 
+function RoutingSelectionLabel({ index }: { index: number }) {
+  const { t } = useTranslation()
+  const { data } = useQuery({
+    queryKey: ['routingStatus'],
+    queryFn: getRoutingStatus,
+    refetchInterval: 2000,
+  })
+  const selection = data?.current[index]
+  if (
+    data?.phase === 'disabled' ||
+    (index > 0 && data?.enabled_groups[0] && !data.enabled_groups[index])
+  )
+    return <>{t('routing.serviceDisabled')}</>
+  if (!selection)
+    return (
+      <>
+        {t(`routing.phase.${data?.phase || 'waiting_core'}` as TranslationKey)}
+      </>
+    )
+  return (
+    <>
+      {selection.route.hops === 2 ? `${selection.route.ingress_name} → ` : ''}
+      {selection.route.egress_name} · {selection.quality.millis} ms
+      {data?.recovering[index] ? ` · ${t('routing.recoveringService')}` : ''}
+    </>
+  )
+}
+
 export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
   const { t } = useTranslation()
   const {
@@ -56,6 +88,8 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
     isChainMode: _ = false,
   } = props
   const { type, group, headState, member, memberCol } = item
+  const routingIndex = ROUTING_GROUPS.indexOf(group.name)
+  const managed = routingIndex >= 0
   const { verge } = useVerge()
   const enable_group_icon = verge?.enable_group_icon ?? true
   const toolsOnLeft = verge?.proxy_group_tools_position === 'left'
@@ -120,7 +154,18 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
         )}
         <ListItemText
           sx={{ flex: '0 1 auto', minWidth: 0 }}
-          primary={<StyledPrimary>{group.name}</StyledPrimary>}
+          primary={
+            <StyledPrimary>
+              {managed
+                ? [
+                    t('routing.autoTitle'),
+                    'OpenAI / Codex',
+                    'Claude / Claude Code',
+                    'Gemini / AI Studio',
+                  ][routingIndex]
+                : group.name}
+            </StyledPrimary>
+          }
           secondary={
             <Box
               sx={{
@@ -139,9 +184,15 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
                   textOverflow: 'ellipsis',
                 }}
               >
-                <StyledTypeBox>{group.type}</StyledTypeBox>
+                <StyledTypeBox>
+                  {managed ? t('routing.autoTitle') : group.type}
+                </StyledTypeBox>
                 <StyledSubtitle sx={{ color: 'text.secondary' }}>
-                  {group.now}
+                  {managed ? (
+                    <RoutingSelectionLabel index={routingIndex} />
+                  ) : (
+                    group.now
+                  )}
                 </StyledSubtitle>
               </Box>
             </Box>
@@ -214,6 +265,7 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
         <ListItemButton
           dense
           sx={{
+            cursor: managed ? 'default' : 'pointer',
             boxShadow:
               stickyed && headState?.open
                 ? '0 4px 8px rgba(0, 0, 0, 0.2) !important'
@@ -225,6 +277,7 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
             borderRadius: '8px',
           }}
           onClick={() => {
+            if (managed) return
             if (headState?.open) {
               onGroupToggle?.(group)
             }
@@ -233,9 +286,19 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
         >
           <Box sx={{ width: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              {toolsOnLeft ? toolsBlock : nameBlock}
-              {toolsOnLeft ? nameBlock : toolsBlock}
-              {headState?.open ? <ExpandLessRounded /> : <ExpandMoreRounded />}
+              {managed ? (
+                nameBlock
+              ) : (
+                <>
+                  {toolsOnLeft ? toolsBlock : nameBlock}
+                  {toolsOnLeft ? nameBlock : toolsBlock}
+                  {headState?.open ? (
+                    <ExpandLessRounded />
+                  ) : (
+                    <ExpandMoreRounded />
+                  )}
+                </>
+              )}
             </Box>
           </Box>
         </ListItemButton>

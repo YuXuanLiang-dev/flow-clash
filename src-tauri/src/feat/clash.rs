@@ -92,6 +92,15 @@ fn after_change_clash_mode() {
 
 /// Propagates mihomo PATCH failures so the frontend can roll back its optimistic mode.
 pub async fn change_clash_mode(mode: String) -> Result<(), String> {
+    let _write = Config::lock_config_write().await;
+    if mode.as_str() != "rule"
+        && crate::config::routing::routing_config()
+            .await
+            .map_err(|error| error.to_string())?
+            .enabled
+    {
+        return Err("Disable adaptive routing before changing the proxy mode".into());
+    }
     let mut mapping = Mapping::new();
     mapping.insert(Value::from("mode"), Value::from(mode.as_str()));
     let json_value = serde_json::json!({

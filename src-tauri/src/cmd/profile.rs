@@ -150,6 +150,9 @@ pub async fn delete_profile(index: String) -> CmdResult {
         .with_data_modify(|mut candidate| async move {
             let original = candidate.clone();
             let (should_update, plan) = candidate.plan_delete_item(&index)?;
+            let should_update = should_update
+                || (crate::config::routing::routing_config().await?.enabled
+                    && matches!(original.get_item(&index)?.itype.as_deref(), Some("local" | "remote")));
             let guard = if should_update {
                 match CoreManager::global()
                     .update_config_forced_with_profiles(&candidate, &original)

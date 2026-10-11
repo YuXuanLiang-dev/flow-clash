@@ -319,17 +319,31 @@ mod listener_key_tests {
 #[cfg(test)]
 mod tests {
     use super::configured_listener_ports;
-    use crate::config::{IClashTemp, IVerge};
+    use crate::{
+        config::{IClashTemp, IVerge},
+        constants::network::{
+            DEFAULT_EXTERNAL_CONTROLLER,
+            ports::{DEFAULT_HTTP, DEFAULT_SOCKS},
+        },
+    };
+    #[cfg(not(target_os = "windows"))]
+    use crate::constants::network::ports::DEFAULT_REDIR;
+    #[cfg(target_os = "linux")]
+    use crate::constants::network::ports::DEFAULT_TPROXY;
 
     #[test]
     fn configured_ports_include_disabled_listener_assignments() {
+        let controller = DEFAULT_EXTERNAL_CONTROLLER
+            .rsplit_once(':')
+            .and_then(|(_, port)| port.parse().ok())
+            .expect("controller address must carry a port");
         let ports = configured_listener_ports(&IClashTemp::template(), &IVerge::template());
-        assert!(ports.contains(&7898));
-        assert!(ports.contains(&7899));
-        assert!(ports.contains(&9097));
+        assert!(ports.contains(&DEFAULT_SOCKS));
+        assert!(ports.contains(&DEFAULT_HTTP));
+        assert!(ports.contains(&controller));
         #[cfg(not(target_os = "windows"))]
-        assert!(ports.contains(&7895));
+        assert!(ports.contains(&DEFAULT_REDIR));
         #[cfg(target_os = "linux")]
-        assert!(ports.contains(&7896));
+        assert!(ports.contains(&DEFAULT_TPROXY));
     }
 }

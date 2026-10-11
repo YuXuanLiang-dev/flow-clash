@@ -8,7 +8,7 @@ export const developmentServiceDirectoryEnvironment =
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const serviceRepository = resolve(
   repositoryRoot,
-  '..',
+  'vendor',
   'clash-verge-service-ipc',
 )
 const serviceManifest = join(serviceRepository, 'Cargo.toml')
@@ -78,9 +78,9 @@ export async function prepareDevelopmentService() {
     }
   }
   const executables = [
-    'clash-verge-service',
-    'clash-verge-service-install',
-    'clash-verge-service-uninstall',
+    'flowclash-service',
+    'flowclash-service-install',
+    'flowclash-service-uninstall',
     'service-integration-driver',
   ].map((name) => {
     const executable = artifacts.get(name)
@@ -107,7 +107,7 @@ export async function ensureDevelopmentService({
   const extension = platform === 'win32' ? '.exe' : ''
   const installer = join(
     serviceDirectory,
-    `clash-verge-service-install${extension}`,
+    `flowclash-service-install${extension}`,
   )
   const host = execFileSync('rustc', ['-vV'], { encoding: 'utf8' }).match(
     /^host: (.+)$/m,

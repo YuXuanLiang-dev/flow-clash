@@ -187,9 +187,11 @@ impl CoreManager {
         if previous != mode {
             logging!(info, Type::Core, "Core running mode changed: {previous} -> {mode}");
         }
-        let mut startup_error = self.startup_error.lock();
         self.run_state.core_started(mode);
-        *startup_error = None;
+        // Hold the startup-error lock only for the assignment; routing start-up must
+        // not run behind it.
+        *self.startup_error.lock() = None;
+        crate::core::routing::start();
     }
 
     /// The Core is no longer running, for any reason.
@@ -203,6 +205,7 @@ impl CoreManager {
         }
         self.invalidate_core_readiness();
         self.run_state.core_stopped();
+        crate::core::routing::stop();
     }
 
     /// A start attempt is under way and the Core is not serving yet.

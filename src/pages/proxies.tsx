@@ -13,11 +13,13 @@ import {
 } from '@/providers/app-data-context'
 import {
   getRuntimeProxyChainConfig,
+  getRoutingConfig,
   patchClashMode,
   updateProxyChainConfigInRuntime,
 } from '@/services/cmds'
 import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
+import { useQuery } from '@/services/query-client'
 import { debugLog } from '@/utils/debug'
 
 const MODES = ['rule', 'global', 'direct'] as const
@@ -28,6 +30,10 @@ const isMode = (value: unknown): value is Mode =>
 
 const ProxyPage = () => {
   const { t } = useTranslation()
+  const { data: routingConfig } = useQuery({
+    queryKey: ['routingConfig'],
+    queryFn: getRoutingConfig,
+  })
 
   // 从 localStorage 恢复链式代理按钮状态
   const [isChainMode, setIsChainMode] = useState(() => {
@@ -43,6 +49,7 @@ const ProxyPage = () => {
     (_: string | null, action: string | null) => action,
     null as string | null,
   )
+  const manualChainMode = isChainMode && routingConfig?.enabled === false
 
   const { clashConfig } = useClashConfigData()
   const { refreshClashConfig } = useAppRefreshers()
@@ -92,7 +99,7 @@ const ProxyPage = () => {
 
   // 当开启链式代理模式时，获取配置数据
   useEffect(() => {
-    if (!isChainMode) {
+    if (!manualChainMode) {
       updateChainConfigData(null)
       return
     }
@@ -128,7 +135,7 @@ const ProxyPage = () => {
     return () => {
       cancelled = true
     }
-  }, [isChainMode, updateChainConfigData])
+  }, [manualChainMode, updateChainConfigData])
 
   useEffect(() => {
     if (normalizedMode && !isMode(normalizedMode)) {
@@ -141,7 +148,7 @@ const ProxyPage = () => {
       full
       contentStyle={{ height: '100%' }}
       title={
-        isChainMode ? (
+        manualChainMode ? (
           <Box
             component="span"
             data-tauri-drag-region="true"
@@ -169,6 +176,7 @@ const ProxyPage = () => {
                 key={mode}
                 variant={mode === curMode ? 'contained' : 'outlined'}
                 onClick={() => onChangeMode(mode)}
+                disabled={routingConfig?.enabled !== false && mode !== 'rule'}
                 sx={{ textTransform: 'capitalize' }}
               >
                 {t(`proxies.page.modes.${mode}`)}
@@ -176,27 +184,29 @@ const ProxyPage = () => {
             ))}
           </ButtonGroup>
 
-          <Button
-            size="small"
-            variant={isChainMode ? 'contained' : 'outlined'}
-            onClick={onToggleChainMode}
-            sx={{ ml: 1 }}
-            startIcon={
-              isChainMode ? (
-                <LanRounded fontSize="small" />
-              ) : (
-                <LanOutlined fontSize="small" />
-              )
-            }
-          >
-            {t('proxies.page.actions.toggleChain')}
-          </Button>
+          {routingConfig?.enabled === false && (
+            <Button
+              size="small"
+              variant={isChainMode ? 'contained' : 'outlined'}
+              onClick={onToggleChainMode}
+              sx={{ ml: 1 }}
+              startIcon={
+                isChainMode ? (
+                  <LanRounded fontSize="small" />
+                ) : (
+                  <LanOutlined fontSize="small" />
+                )
+              }
+            >
+              {t('proxies.page.actions.toggleChain')}
+            </Button>
+          )}
         </Box>
       }
     >
       <ProxyGroups
         mode={curMode ?? 'rule'}
-        isChainMode={isChainMode}
+        isChainMode={manualChainMode}
         chainConfigData={chainConfigData}
       />
     </BasePage>

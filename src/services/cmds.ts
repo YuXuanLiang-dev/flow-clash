@@ -5,6 +5,14 @@ import dayjs from 'dayjs'
 import type { CommandFailure } from '@/services/notice-service'
 import { showNotice } from '@/services/notice-service'
 import type { ProxyViewV1 } from '@/types/proxy-view'
+import type {
+  RoutingConfig,
+  RoutingMechanisms,
+  RoutingNodeQuery,
+  RoutingNodePage,
+  RoutingStatus,
+  RoutingRole,
+} from '@/types/routing'
 import { debugLog } from '@/utils/debug'
 
 export async function copyClashEnv() {
@@ -14,6 +22,20 @@ export async function copyClashEnv() {
 export async function getProfiles() {
   return invoke<IProfilesConfig>('get_profiles')
 }
+
+export const getRoutingConfig = () =>
+  invoke<RoutingConfig>('get_routing_config')
+export const getRoutingDefaults = () =>
+  invoke<RoutingMechanisms>('get_routing_defaults')
+export const saveRoutingSettings = (settings: RoutingConfig) =>
+  invoke<RoutingConfig>('save_routing_settings', { settings })
+export const setRoutingSubscriptionRole = (uid: string, role: RoutingRole) =>
+  invoke<RoutingConfig>('set_routing_subscription_role', { uid, role })
+export const getRoutingStatus = () =>
+  invoke<RoutingStatus>('get_routing_status')
+export const listRoutingNodes = (query: RoutingNodeQuery) =>
+  invoke<RoutingNodePage>('list_routing_nodes', { query })
+export const reevaluateRouting = () => invoke<void>('reevaluate_routing')
 
 export async function enhanceProfiles() {
   return (

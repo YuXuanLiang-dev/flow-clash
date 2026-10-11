@@ -14,6 +14,7 @@ import {
   type ProxyViewV1,
   type ResolvedProxyMember,
 } from '@/types/proxy-view'
+import { ROUTING_GROUPS } from '@/types/routing'
 import { debugLog } from '@/utils/debug'
 
 import { filterSort } from './use-filter-sort'
@@ -294,7 +295,10 @@ export const useRenderList = (
         },
       ]
 
-      if (headState.open || !useRule) {
+      if (
+        (headState.open || !useRule) &&
+        !ROUTING_GROUPS.includes(group.name)
+      ) {
         const occurrences = filterSort(
           resolveOccurrences(proxyView, group),
           group.name,
